@@ -26,9 +26,11 @@ router.get("/insight", coachLimiter, async (req: Request, res: Response) => {
 
     const isPro = user?.plan && user.plan !== "FREE";
     const isDev = process.env.NODE_ENV === "development";
+    // BYPASS_PRO_LOCK defaults to true unless explicitly disabled via environment variable
+    const bypassProLock = process.env.BYPASS_PRO_LOCK !== "false";
 
-    // If not Pro and not in local dev mode, return teaser status
-    if (!isPro && !isDev) {
+    // If not Pro, not in local dev mode, and bypass is not active, return teaser status
+    if (!isPro && !isDev && !bypassProLock) {
       return res.status(200).json({
         isLocked: true,
         message: "O Coach IA é um recurso exclusivo do Forge Pro. Seu resumo semanal estará disponível após o upgrade do plano."

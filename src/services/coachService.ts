@@ -124,6 +124,48 @@ export async function getUserWeeklyMetrics(userId: string): Promise<UserMetrics>
 }
 
 /**
+ * Smart Rule-based behavioral science feedback generator.
+ * Used when Gemini API is offline, key is missing, or rate-limited.
+ */
+function generateRuleBasedFeedback(metrics: UserMetrics): CoachInsightResponse {
+  const consistency = metrics.habits.overallConsistency;
+  let summary = "";
+  let highlight = "";
+  let suggestion = "";
+
+  if (consistency >= 80) {
+    summary = `Parabéns pela consistência excepcional de ${consistency}% nesta semana! De acordo com a teoria da autoeficácia de Bandura, experiências de domínio de sucesso são a fonte mais forte para solidificar hábitos. Continue surfando esse momento de alta energia.`;
+    highlight = "Consistência de alto nível estabelecida.";
+  } else if (consistency >= 50) {
+    summary = `Bom trabalho! Você manteve uma consistência média de ${consistency}%. O progresso incremental e as pequenas vitórias (Progress Principle) são o combustível mais duradouro. Ajuste os gatilhos se sentir que a semana ficou muito corrida.`;
+    highlight = "Progresso estável nos hábitos principais.";
+  } else {
+    summary = `Esta semana apresentou alguns desafios, fechando com ${consistency}% de consistência. De acordo com o Modelo de Fogg (B=MAP), quando a motivação cai, precisamos reduzir drasticamente a fricção. Foque em realizar apenas a tarefa mínima garantida nos próximos dias.`;
+    highlight = "Foco em reduzir a fricção.";
+  }
+
+  const habitSummaries = metrics.habits.summary;
+  let worstHabit: any = null;
+  if (habitSummaries.length > 0) {
+    const sorted = [...habitSummaries].sort((a, b) => a.weeklyConsistency - b.weeklyConsistency);
+    worstHabit = sorted[0];
+  }
+
+  if (worstHabit && worstHabit.weeklyConsistency < 50) {
+    suggestion = `Se eu sentir preguiça ou esquecer de fazer "${worstHabit.title}", então farei apenas a sua versão mínima de 2 minutos imediatamente.`;
+  } else if (metrics.reflection.averageMood && metrics.reflection.averageMood <= 3) {
+    suggestion = "Se meu nível de estresse estiver alto, então vou escrever 3 linhas no diário para liberar carga cognitiva.";
+  } else if (metrics.goals.length > 0) {
+    const randomGoal = metrics.goals[Math.floor(Math.random() * metrics.goals.length)];
+    suggestion = `Se eu começar a procrastinar, então vou revisar por 1 minuto a meta "${randomGoal.title}" para me reconectar ao propósito.`;
+  } else {
+    suggestion = "Se eu planejar um new hábito, então garantirei pareá-lo com um ritual agradável que já realizo.";
+  }
+
+  return { summary, highlight, suggestion };
+}
+
+/**
  * Calls Gemini API via HTTPS Fetch to generate weekly insight
  */
 async function callGeminiAPI(metrics: UserMetrics): Promise<CoachInsightResponse> {
@@ -132,7 +174,7 @@ async function callGeminiAPI(metrics: UserMetrics): Promise<CoachInsightResponse
     throw new Error("GEMINI_API_KEY_MISSING");
   }
 
-  const model = "gemini-2.5-flash";
+  const model = "gemini-3.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const promptText = `Aqui estão as métricas de progresso do usuário da última semana:
@@ -271,12 +313,22 @@ export async function getOrGenerateCoachInsight(userId: string): Promise<CoachIn
   } catch (err: any) {
     console.error("Failed to call Gemini API:", err.message || err);
 
-    // Fallback: Default behavioral science feedback if Gemini is unavailable
-    const fallbackInsight: CoachInsightResponse = {
-      summary: `Olá! Seu painel de métricas da semana está pronto. Sua consistência média em hábitos foi de ${metrics.habits.overallConsistency}%. Continue registrando seus comportamentos para receber feedbacks dinâmicos completos da IA.`,
-      highlight: metrics.habits.overallConsistency >= 70 ? "Bom foco!" : "Atenção ao ritmo da consistência",
-      suggestion: "Se eu me sentir sem rumo no dia, então vou abrir minhas metas e ler meu plano se-então por 1 minuto."
-    };
+    // Fallback: Default dynamic behavioral science feedback if Gemini is unavailable
+    const fallbackInsight = generateRuleBasedFeedback(metrics);
+
+    // Save fallback to Database so it caches and doesn't spam the failing API
+    try {
+      await prisma.coachInsight.create({
+        data: {
+          userId,
+          summary: fallbackInsight.summary,
+          highlight: fallbackInsight.highlight,
+          suggestion: fallbackInsight.suggestion
+        }
+      });
+    } catch (dbErr) {
+      console.error("Failed to save fallback insight:", dbErr);
+    }
 
     return fallbackInsight;
   }
