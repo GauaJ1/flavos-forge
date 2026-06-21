@@ -28,6 +28,7 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 
 ENV NODE_ENV=production
 WORKDIR /app
+RUN chown -R node:node /app
 
 # Run the app under a non-privileged system user for container security
 USER node
