@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  forge-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: forge-backend
+    restart: always
+    env_file:
+      - .env.production
+    expose:
+      - "5000"
+    networks:
+      - forge-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: forge-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - forge-net
+    depends_on:
+      - forge-backend
+
+networks:
+  forge-net:
+
+volumes:
+  caddy_data:
+  caddy_config:

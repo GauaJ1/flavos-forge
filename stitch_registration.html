@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Flavos Forge - Registration</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Manrope:wght@400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#e6e0ec",
+                    "surface-variant": "#36333c",
+                    "surface-bright": "#3b3841",
+                    "tertiary-fixed": "#ffdbcc",
+                    "on-tertiary": "#571f00",
+                    "surface-container-high": "#2b2931",
+                    "secondary-fixed": "#8df9ad",
+                    "on-surface": "#e6e0ec",
+                    "on-primary": "#00363e",
+                    "inverse-primary": "#006876",
+                    "error": "#ffb4ab",
+                    "on-secondary-container": "#f6fff4",
+                    "primary-container": "#22b8cf",
+                    "surface-dim": "#14121a",
+                    "on-background": "#e6e0ec",
+                    "outline-variant": "#3d494c",
+                    "on-primary-container": "#00444e",
+                    "on-secondary-fixed-variant": "#005229",
+                    "on-secondary-fixed": "#00210d",
+                    "inverse-on-surface": "#322f38",
+                    "on-tertiary-container": "#6b2800",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#ffb694",
+                    "on-tertiary-fixed": "#351000",
+                    "on-error": "#690005",
+                    "surface-container": "#211e27",
+                    "secondary": "#71dc93",
+                    "surface-container-highest": "#36333c",
+                    "surface-container-lowest": "#0f0d15",
+                    "secondary-container": "#038647",
+                    "primary-fixed-dim": "#53d7ef",
+                    "error-container": "#93000a",
+                    "background": "#14121a",
+                    "surface-tint": "#53d7ef",
+                    "on-primary-fixed-variant": "#004e5a",
+                    "primary": "#53d7ef",
+                    "on-surface-variant": "#bcc9cc",
+                    "surface": "#14121a",
+                    "secondary-fixed-dim": "#71dc93",
+                    "tertiary-container": "#ff874b",
+                    "primary-fixed": "#a1efff",
+                    "on-secondary": "#00391b",
+                    "outline": "#869396",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "surface-container-low": "#1d1a23",
+                    "on-primary-fixed": "#001f25",
+                    "tertiary": "#ffb694"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "24px",
+                    "unit": "4px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "64px",
+                    "stack-lg": "48px",
+                    "gutter": "24px",
+                    "container-max": "1200px",
+                    "stack-sm": "8px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Bricolage Grotesque"],
+                    "display-lg": ["Bricolage Grotesque"],
+                    "data-label": ["IBM Plex Mono"],
+                    "display-lg-mobile": ["Bricolage Grotesque"],
+                    "data-value": ["IBM Plex Mono"],
+                    "body-lg": ["Manrope"],
+                    "body-md": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "data-label": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "data-value": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen flex items-center justify-center p-margin-mobile md:p-margin-desktop antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Ambient decorative element -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden flex items-center justify-center z-0 opacity-20">
+<div class="w-[800px] h-[800px] bg-primary-container/10 rounded-full blur-[120px]"></div>
+</div>
+<!-- Registration Card -->
+<main class="w-full max-w-[440px] relative z-10">
+<!-- Brand Header -->
+<div class="text-center mb-stack-lg">
+<h1 class="font-headline-md text-headline-md text-primary font-bold uppercase tracking-widest mb-2">FLAVOS FORGE</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Forge your path to high performance.</p>
+</div>
+<!-- Form Card -->
+<div class="bg-surface-container border border-white/10 rounded-xl p-6 md:p-10 shadow-2xl backdrop-blur-sm">
+<form action="#" class="flex flex-col gap-stack-md" method="POST">
+<!-- Name Field -->
+<div class="flex flex-col gap-unit">
+<label class="font-data-label text-data-label text-on-surface-variant uppercase" for="name">Name</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">person</span>
+<input class="w-full bg-surface-container-highest border border-white/5 rounded-lg pl-12 pr-4 py-3.5 font-body-md text-body-md text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" id="name" name="name" placeholder="Full Name" required="" type="text"/>
+</div>
+</div>
+<!-- Email Field -->
+<div class="flex flex-col gap-unit">
+<label class="font-data-label text-data-label text-on-surface-variant uppercase" for="email">Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">email</span>
+<input class="w-full bg-surface-container-highest border border-white/5 rounded-lg pl-12 pr-4 py-3.5 font-body-md text-body-md text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" id="email" name="email" placeholder="you@example.com" required="" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-unit">
+<label class="font-data-label text-data-label text-on-surface-variant uppercase" for="password">Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">lock</span>
+<input class="w-full bg-surface-container-highest border border-white/5 rounded-lg pl-12 pr-4 py-3.5 font-body-md text-body-md text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+</div>
+</div>
+<!-- Confirm Password Field -->
+<div class="flex flex-col gap-unit">
+<label class="font-data-label text-data-label text-on-surface-variant uppercase" for="confirm_password">Confirm Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">lock</span>
+<input class="w-full bg-surface-container-highest border border-white/5 rounded-lg pl-12 pr-4 py-3.5 font-body-md text-body-md text-on-surface placeholder-on-surface-variant/40 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" id="confirm_password" name="confirm_password" placeholder="••••••••" required="" type="password"/>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="mt-stack-sm w-full bg-primary-container text-on-primary-container font-data-label text-data-label uppercase py-4 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2" type="submit">
+                    Registrar
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</form>
+<!-- Footer Link -->
+<div class="mt-stack-md text-center">
+<a class="font-data-label text-data-label text-on-surface-variant hover:text-primary transition-colors border-b border-transparent hover:border-primary pb-1" href="#">
+                    Já tenho uma conta. Fazer Login
+                </a>
+</div>
+</div>
+</main>
+</body></html>

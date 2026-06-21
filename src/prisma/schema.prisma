@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // "postgresql" for production (Neon). Change DATABASE_URL in .env for local sqlite dev.
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  plan         String    @default("FREE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  goals          Goal[]
+  habits         Habit[]
+  journalEntries JournalEntry[]
+  sessions       Session[]
+  passwordResets PasswordReset[]
+  coachInsights  CoachInsight[]
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+}
+
+model Goal {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  title           String
+  specificOutcome String        // "específico" of Goal-Setting Theory
+  metric          String?       // "mensurável"
+  difficulty      String        @default("MODERATE")
+  deadline        DateTime?
+  status          String        @default("ACTIVE")
+  actionPlans     ActionPlan[]
+  checkIns        GoalCheckIn[]
+  createdAt       DateTime      @default(now())
+}
+
+model ActionPlan {
+  id         String   @id @default(uuid())
+  goalId     String
+  goal       Goal     @relation(fields: [goalId], references: [id])
+  triggerCue String   // "Se ..."
+  action     String   // "...então ..."
+  createdAt  DateTime @default(now())
+}
+
+model GoalCheckIn {
+  id        String   @id @default(uuid())
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id])
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Habit {
+  id          String         @id @default(uuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  title       String
+  cue         String?
+  freezesUsed Int            @default(0) // "pausas" sem penalização
+  createdAt   DateTime       @default(now())
+  checkIns    HabitCheckIn[]
+}
+
+model HabitCheckIn {
+  id        String   @id @default(uuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id])
+  date      DateTime
+  completed Boolean
+  isFrozen  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
+}
+
+model JournalEntry {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  contentEnc Bytes     // AES-256-GCM — never plain text
+  iv         Bytes
+  authTag    Bytes
+  mood       Int?      // numerical rating for Coach IA, avoiding reading plain text
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  otpHash   String    // Hash of the OTP token
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model CoachInsight {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  summary    String
+  highlight  String
+  suggestion String
+  createdAt  DateTime @default(now())
+}
