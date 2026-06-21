@@ -5,6 +5,7 @@ import BottomNav from '../components/BottomNav'
 import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
 import { useAppForeground } from '../lib/useAppForeground'
+import { getFreshStartContext } from '../utils/freshStart'
 
 interface GoalSummary {
   id: string
@@ -52,6 +53,10 @@ export default function DashboardPage() {
   const [insightLocked, setInsightLocked] = useState(true)
   const [insightLoading, setInsightLoading] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
+  // Progress Principle — toast que aparece após check-in vinculado a meta
+  const [goalImpactMsg, setGoalImpactMsg] = useState<string | null>(null)
+
+  const { isMonday, isMonthStart } = getFreshStartContext()
 
   const fetchInsight = async () => {
     setInsightLoading(true)
@@ -158,10 +163,16 @@ export default function DashboardPage() {
   const toggleHabit = async (habitId: string, currentState: boolean) => {
     try {
       if (!currentState) {
-        await api.post(`/habits/${habitId}/checkin`, {
+        const { data: checkinData } = await api.post(`/habits/${habitId}/checkin`, {
           date: new Date().toISOString().split('T')[0],
           completed: true,
         })
+        // Progress Principle — exibe impacto na meta vinculada quando existir
+        if (checkinData?.goalImpact?.goalTitle) {
+          setGoalImpactMsg(`Isso também avança sua meta: ${checkinData.goalImpact.goalTitle}`)
+          // Auto-dismiss após 4 s (não há botão de culpa ou contador de pressão)
+          setTimeout(() => setGoalImpactMsg(null), 4000)
+        }
       }
       setData(prev => ({
         ...prev,
@@ -179,6 +190,33 @@ export default function DashboardPage() {
     <div className="app-shell" style={{ background: 'var(--color-background)' }}>
       <TopHeader showAvatar />
 
+      {/* Progress Principle toast — aparece após check-in vinculado a meta */}
+      {goalImpactMsg && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed', top: '72px', left: '50%', transform: 'translateX(-50%)',
+            zIndex: 9999, maxWidth: '340px', width: 'calc(100% - 32px)',
+            background: 'rgba(47, 158, 92, 0.92)', backdropFilter: 'blur(8px)',
+            color: '#fff', padding: '12px 16px', borderRadius: '12px',
+            fontFamily: 'var(--font-body)', fontSize: '14px', lineHeight: 1.5,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', gap: '10px',
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px', flexShrink: 0 }}>trending_up</span>
+          <span>{goalImpactMsg}</span>
+          <button
+            onClick={() => setGoalImpactMsg(null)}
+            style={{ background: 'none', border: 'none', color: '#fff', marginLeft: 'auto', cursor: 'pointer', opacity: 0.7 }}
+            aria-label="Fechar"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+          </button>
+        </div>
+      )}
+
       <main className="app-main">
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '80px' }}>
@@ -188,6 +226,51 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="dashboard-grid animate-fade-in">
+
+            {/* ── Fresh Start banners (aparecem apenas nos dias certos) ─────── */}
+            {(isMonday || isMonthStart) && (
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' }}>
+                {isMonday && (
+                  <div style={{
+                    padding: '12px 16px', borderRadius: '12px',
+                    background: 'rgba(34, 184, 207, 0.07)',
+                    border: '1px solid rgba(34, 184, 207, 0.18)',
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                  }}>
+                    <span className="material-symbols-outlined" style={{ color: 'var(--color-forge-teal)', fontSize: '20px', flexShrink: 0 }}>refresh</span>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--color-on-surface-variant)', lineHeight: 1.5 }}>
+                      Nova semana, novo ponto de partida. O que ficou pra trás, fica pra trás.
+                    </p>
+                  </div>
+                )}
+                {isMonthStart && (
+                  <div style={{
+                    padding: '12px 16px', borderRadius: '12px',
+                    background: 'rgba(47, 158, 92, 0.07)',
+                    border: '1px solid rgba(47, 158, 92, 0.18)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span className="material-symbols-outlined" style={{ color: 'var(--color-forge-green)', fontSize: '20px', flexShrink: 0 }}>calendar_month</span>
+                      <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--color-on-surface-variant)', lineHeight: 1.5 }}>
+                        Início de mês — bom momento pra olhar suas metas de novo.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/goals')}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--color-forge-green)', fontFamily: 'var(--font-mono)',
+                        fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase',
+                        whiteSpace: 'nowrap', padding: '4px 0',
+                      }}
+                    >
+                      Ver metas
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Column 1: Focus Dial, Journal, and Weekly Review */}
             <div className="dashboard-col">
               {/* FOCUS DIAL CARD */}

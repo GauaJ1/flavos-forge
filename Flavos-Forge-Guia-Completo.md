@@ -46,6 +46,30 @@ Desde os anos 1980, a linha de pesquisa de James Pennebaker mostra que escrever 
 O próprio Goal-Setting Theory mostra que feedback periódico sobre o progresso é o que sustenta o comprometimento com a meta ao longo do tempo — sem feedback, mesmo metas bem definidas perdem força.
 → **Decisão**: ritual semanal (dia configurável) que resume metas, hábitos e diário da semana e pede um ajuste consciente de plano, não só mostra números.
 
+### Engajamento genuíno vs. engajamento manipulado (princípio-guia desta seção)
+A neurociência da dopamina explica tanto a formação de hábito saudável quanto o design viciante de redes sociais — o mecanismo de base (erro de predição de recompensa no sistema dopaminérgico) é o mesmo. A diferença está em como ele é usado: recompensa variável e imprevisível, projetada para maximizar tempo de tela, é o motor por trás de scroll infinito e notificações de culpa. Recompensa previsível, ligada a esforço real e progresso verdadeiro, é o que sustenta mudança de comportamento duradoura.
+→ **Decisão**: o Forge nunca usa recompensa de razão variável (tipo "caixa-surpresa") nem prompts desenhados pra explorar momento de baixa reflexão (autoplay, contagem regressiva de urgência artificial, confirmação enganosa). Toda recompensa no produto é previsível e diretamente proporcional ao esforço real do usuário.
+
+### Fresh Start Effect — marcos temporais como gatilho de motivação
+Pesquisa de Dai, Milkman & Riis (2014) mostra que pessoas são significativamente mais propensas a perseguir metas logo após marcos temporais — início de semana, início de mês, aniversários. O motivo: esses marcos criam uma sensação psicológica de "novo capítulo", distanciando a pessoa de falhas passadas sem culpa.
+→ **Decisão**: segunda-feira é tratada na UI como "ponto de retomada" explícito (não punitivo) — útil sobretudo para quem pausou um hábito na semana anterior. Início de mês vira gatilho natural de sugestão de revisão de metas de longo prazo. *(Roadmap: Fase 4 — Hábitos, Fase 6 — Dashboard)*
+
+### Progress Principle — pequenas vitórias conectadas a um propósito maior
+Amabile & Kramer (2011), em análise de quase 12 mil registros diários de trabalhadores, encontraram que nada contribui mais para um estado mental positivo do que progredir em algo com significado — mesmo que o avanço seja pequeno. O efeito desaparece quando o progresso não é percebido como conectado a algo maior.
+→ **Decisão**: o check-in diário de hábito mostra explicitamente seu efeito sobre a meta de longo prazo associada ("isso também moveu sua meta de X para Y%"), não fica isolado como um número solto do dia. *(Roadmap: Fase 3 — Metas, Fase 4 — Hábitos)*
+
+### Autoeficácia — a primeira vitória precisa ser garantida
+Bandura (1977) mostra que a crença na própria capacidade (autoeficácia) vem principalmente de experiências de domínio reais — realizar a tarefa, não apenas planejá-la ou observar alguém fazendo. É a fonte mais forte entre as quatro identificadas (domínio, vicária, persuasão social, estado emocional).
+→ **Decisão**: ao criar um hábito novo, o formulário sugere ativamente a menor versão possível da ação (ex: "2 min de leitura" em vez de "30 min"), e só sugere aumento de dificuldade depois de evidência real de consistência nas últimas semanas. A primeira experiência com qualquer hábito novo é desenhada para ser uma vitória garantida. *(Roadmap: Fase 4 — Hábitos)*
+
+### Fogg Behavior Model (B=MAP) — fricção mínima e o estímulo certo no momento certo
+BJ Fogg (Stanford) mostra que um comportamento só acontece quando motivação, habilidade e um estímulo convergem ao mesmo tempo — e que habilidade é definida pelo elo mais fraco entre seis fatores (tempo, dinheiro, esforço físico, esforço mental, desvio social, quão fora da rotina a ação é). Um estímulo só funciona se motivação e habilidade já estiverem acima de um limiar; caso contrário, vira fricção, não combustível. O próprio Fogg alerta que designs que exploram esse modelo em momentos de baixa reflexão (autoplay, scroll infinito, prompts de culpa) deslizam de design comportamental para coerção.
+→ **Decisão**: check-in de hábito em 1 toque, sem telas intermediárias — reduzindo agressivamente o fator "esforço mental/tempo". O tipo de notificação varia conforme o estado do usuário: lembrete simples (Signal) para quem está consistente; oferta de facilitar a ação (Facilitador — "hoje, que tal a versão de 1 min?") para quem pausou ou está com dificuldade — nunca um prompt de culpa (Spark negativo). *(Roadmap: Fase 4 — Hábitos, Fase 6 — Dashboard)*
+
+### Temptation Bundling — pareamento opcional definido pelo próprio usuário
+Milkman, Minson & Volpp (2013) encontraram que parear uma atividade prazerosa imediata com um comportamento que exige esforço mas traz benefício de longo prazo aumenta significativamente a adesão — em um experimento de campo, acesso a audiobooks tentadores restrito à academia aumentou a frequência de treino em mais de 50% comparado ao grupo controle.
+→ **Decisão**: campo opcional na criação do hábito — "o que você vai parear com isso?" (ex: "só ouço meu podcast favorito enquanto faço X"). Inteiramente definido e editável pelo usuário; o Forge não sugere pareamentos manipulativos, só guarda a intenção que a pessoa já formulou. *(Roadmap: Fase 4 — Hábitos)*
+
 ---
 
 ## 3. Pilares de produto
@@ -64,13 +88,10 @@ O próprio Goal-Setting Theory mostra que feedback periódico sobre o progresso 
 
 ## 4. MVP — Free vs Pro
 
-> [!NOTE]
-> Os recursos Pro (ex: Coach IA, busca avançada, exportação) e as restrições de volumes no plano gratuito (até 3 metas/hábitos) estão suspensos e serão implementados apenas a partir de **Fevereiro de 2027**. No MVP atual, todos os usuários têm acesso a metas e hábitos **ilimitados**.
-
-| Recurso | MVP (Free / Atual) | Pro (Pós-Fevereiro 2027) |
-|---------|--------------------|--------------------------|
-| Metas ativas | **Ilimitadas** | Ilimitadas |
-| Hábitos ativos | **Ilimitados** | Ilimitados |
+| Recurso | Free | Pro (Forge Pro) |
+|---------|------|----------------------|
+| Metas ativas | até 3 | ilimitadas |
+| Hábitos ativos | até 3 | ilimitados |
 | Diário | ilimitado | ilimitado + busca |
 | Revisão semanal | manual | manual + sugestão automática |
 | Dashboard | básico | analytics avançado |
@@ -85,7 +106,7 @@ Incluso automaticamente no **Flavos Pass** e **Flavos Pass Founder**, seguindo o
 
 **Stack**: Node.js + Express + TypeScript · PostgreSQL + Prisma (Neon, `DATABASE_URL` com `?pgbouncer=true&connection_limit=1`) · React + TypeScript + Vite + Tailwind + Framer Motion · JWT HS256 + bcrypt · Resend (e-mail) · Gemini API (Coach IA, opcional/Pro) · Deploy: Fly.io.
 
-**Por que Node/Express/Prisma e não FastAPI (como o Study)?** O Study usa IA em quase toda interação (resumir, explicar, gerar quiz), o que justificou Python/FastAPI. O Forge usa IA só para o insight semanal (job assíncrono, baixo volume) — não há razão técnica para sair do stack padrão da empresa.
+**Por que Node/Express/Prisma e não FastAPI (como o Study)?** O Study usa IA em quase toda interação (resumir, explicar, gerar quiz), o que justificou Python/FastAPI. O Locked-In usa IA só para o insight semanal (job assíncrono, baixo volume) — não há razão técnica para sair do stack padrão da empresa.
 
 **Fase pré-SSO**: igual ao Study, o Forge nasce com auth própria (JWT local), pensada desde o início para ser substituída pelo SSO do Flavos One sem breaking change — por isso `User.id` já nasce como `String(36)` UUID (mesma lição já aprendida no Study).
 

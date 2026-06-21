@@ -12,6 +12,9 @@ interface Habit {
   completedToday: boolean
   consistency: number
   cue?: string
+  minimumVersion?: string
+  pairWith?: string
+  goalId?: string
   recentCheckIns?: { date: string; completed: boolean }[]
 }
 
@@ -20,6 +23,7 @@ export default function HabitsPage() {
   const { triggerSuccess } = useHaptics()
   const [habits, setHabits] = useState<Habit[]>([])
   const [loading, setLoading] = useState(true)
+  const [goalImpactMsg, setGoalImpactMsg] = useState<string | null>(null)
 
   const fetchHabits = () => {
     api.get('/habits')
@@ -39,12 +43,17 @@ export default function HabitsPage() {
   const toggleHabit = async (habitId: string, currentState: boolean) => {
     if (currentState) return // Can't uncheck via this UI
     try {
-      await api.post(`/habits/${habitId}/checkin`, {
+      const { data: checkinData } = await api.post(`/habits/${habitId}/checkin`, {
         date: new Date().toISOString().split('T')[0],
         completed: true,
       })
       triggerSuccess()
       setHabits(prev => prev.map(h => h.id === habitId ? { ...h, completedToday: true } : h))
+      // Progress Principle — exibe impacto na meta vinculada quando existir
+      if (checkinData?.goalImpact?.goalTitle) {
+        setGoalImpactMsg(`Isso também avança sua meta: ${checkinData.goalImpact.goalTitle}`)
+        setTimeout(() => setGoalImpactMsg(null), 4000)
+      }
     } catch {
       // No-op
     }
@@ -59,6 +68,33 @@ export default function HabitsPage() {
   return (
     <div className="app-shell" style={{ background: 'var(--color-background)' }}>
       <TopHeader title="Habits" />
+
+      {/* Progress Principle toast */}
+      {goalImpactMsg && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed', top: '72px', left: '50%', transform: 'translateX(-50%)',
+            zIndex: 9999, maxWidth: '340px', width: 'calc(100% - 32px)',
+            background: 'rgba(47, 158, 92, 0.92)', backdropFilter: 'blur(8px)',
+            color: '#fff', padding: '12px 16px', borderRadius: '12px',
+            fontFamily: 'var(--font-body)', fontSize: '14px', lineHeight: 1.5,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', gap: '10px',
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px', flexShrink: 0 }}>trending_up</span>
+          <span>{goalImpactMsg}</span>
+          <button
+            onClick={() => setGoalImpactMsg(null)}
+            style={{ background: 'none', border: 'none', color: '#fff', marginLeft: 'auto', cursor: 'pointer', opacity: 0.7 }}
+            aria-label="Fechar"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+          </button>
+        </div>
+      )}
 
       <main className="app-main">
         {/* Header row */}

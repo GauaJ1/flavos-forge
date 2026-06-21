@@ -4,6 +4,7 @@ import { requireHabitOwner } from "../middlewares/requireHabitOwner.js";
 import { CreateHabitSchema, UpdateHabitSchema, HabitCheckInSchema, HabitFreezeSchema } from "../schemas/habits.js";
 import { prisma } from "../services/db.js";
 import { writeLimiter } from "../middlewares/rateLimiter.js";
+import { decideHabitPrompt } from "../services/notificationLogic.js";
 
 const router = Router();
 
@@ -56,18 +57,34 @@ router.post("/", async (req: Request, res: Response) => {
       return;
     }
 
-    const { title, cue } = result.data;
+    const { title, cue, minimumVersion, pairWith, goalId } = result.data;
+
+    // Progress Principle — se goalId informado, verifica ownership ANTES de vincular.
+    // Nunca confiar em goalId vindo do cliente sem confirmar que pertence ao usuário autenticado (IDOR).
+    if (goalId) {
+      const goal = await prisma.goal.findFirst({
+        where: { id: goalId, userId },
+      });
+      if (!goal) {
+        res.status(404).json({ error: "not_found", message: "Meta não encontrada ou não pertence ao usuário" });
+        return;
+      }
+    }
 
     const habit = await prisma.habit.create({
       data: {
         userId,
         title,
-        cue,
+        cue: cue ?? null,
+        minimumVersion: minimumVersion ?? null,
+        pairWith: pairWith ?? null,
+        goalId: goalId ?? null,
+        difficultyStage: 1,
         freezesUsed: 0,
       },
     });
 
-    res.status(211).json({
+    res.status(201).json({
       message: "Habit successfully created",
       habit: {
         ...habit,
@@ -109,11 +126,15 @@ router.get("/", async (req: Request, res: Response) => {
         id: habit.id,
         title: habit.title,
         cue: habit.cue,
+        minimumVersion: habit.minimumVersion,
+        pairWith: habit.pairWith,
+        goalId: habit.goalId,
+        difficultyStage: habit.difficultyStage,
         freezesUsed: habit.freezesUsed,
         createdAt: habit.createdAt,
         consistency,
         completedToday,
-        recentCheckIns: habit.checkIns.slice(0, 30), // Return recent 30 checkins
+        recentCheckIns: habit.checkIns.slice(0, 30),
       };
     });
 
@@ -178,13 +199,27 @@ router.put("/:id", requireHabitOwner, async (req: Request, res: Response) => {
       return;
     }
 
-    const { title, cue, freezesUsed } = result.data;
+    const { title, cue, minimumVersion, pairWith, goalId, freezesUsed } = result.data;
+
+    // Progress Principle — re-check ownership when changing goalId
+    if (goalId !== undefined && goalId !== null) {
+      const goal = await prisma.goal.findFirst({
+        where: { id: goalId, userId: req.user!.id },
+      });
+      if (!goal) {
+        res.status(404).json({ error: "not_found", message: "Meta não encontrada ou não pertence ao usuário" });
+        return;
+      }
+    }
 
     const updatedHabit = await prisma.habit.update({
       where: { id: habitId },
       data: {
         title,
         cue,
+        minimumVersion,
+        pairWith,
+        goalId,
         freezesUsed,
       },
       include: {
@@ -304,19 +339,36 @@ router.post("/:id/checkin", writeLimiter, requireHabitOwner, async (req: Request
       return checkIn;
     });
 
-    // Fetch all check-ins to recalculate consistency
+    // Fetch habit with goal relation to recalculate consistency and compute goalImpact
     const habit = await prisma.habit.findUnique({
       where: { id: habitId },
-      include: { checkIns: true },
+      include: { checkIns: true, goal: true },
     });
 
     const consistency = calculateConsistency(habit!.createdAt, habit!.checkIns, habit!.freezesUsed);
 
-    res.status(211).json({
+    // Progress Principle — retorna impacto na meta vinculada quando existir
+    let goalImpact: { goalTitle: string; relatedProgressSignal: number } | null = null;
+    if (habit?.goal && completed) {
+      const totalCheckIns = await prisma.habitCheckIn.count({
+        where: { habit: { goalId: habit.goal.id }, completed: true },
+      });
+      goalImpact = {
+        goalTitle: habit.goal.title,
+        relatedProgressSignal: totalCheckIns,
+      };
+    }
+
+    // Fogg B=MAP — decide tipo de prompt adaptativo para próxima notificação
+    const prompt = await decideHabitPrompt(habitId);
+
+    res.status(200).json({
       message: "Habit check-in registered successfully",
       checkIn: updateResult,
       consistency,
       freezesUsed: habit!.freezesUsed,
+      goalImpact,
+      nextPrompt: prompt,
     });
   } catch (error) {
     console.error("Error registering habit check-in:", error);

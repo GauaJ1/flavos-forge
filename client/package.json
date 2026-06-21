@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npm run build && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:run": "npm run build && npx cap sync android && npx cap run android"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

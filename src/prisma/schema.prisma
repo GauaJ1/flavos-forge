@@ -47,6 +47,7 @@ model Goal {
   status          String        @default("ACTIVE")
   actionPlans     ActionPlan[]
   checkIns        GoalCheckIn[]
+  habits          Habit[]       // hábitos vinculados a esta meta (Progress Principle)
   createdAt       DateTime      @default(now())
 }
 
@@ -68,14 +69,19 @@ model GoalCheckIn {
 }
 
 model Habit {
-  id          String         @id @default(uuid())
-  userId      String
-  user        User           @relation(fields: [userId], references: [id])
-  title       String
-  cue         String?
-  freezesUsed Int            @default(0) // "pausas" sem penalização
-  createdAt   DateTime       @default(now())
-  checkIns    HabitCheckIn[]
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  goalId          String?        // vínculo opcional com meta de longo prazo (Progress Principle)
+  goal            Goal?          @relation(fields: [goalId], references: [id])
+  title           String
+  cue             String?
+  minimumVersion  String?        // versão mínima garantida de sucesso (Autoeficácia)
+  pairWith        String?        // pareamento opcional definido pelo usuário (Temptation Bundling)
+  difficultyStage Int            @default(1) // 1 = versão mínima; sobe só com consistência real
+  freezesUsed     Int            @default(0) // "pausas" sem penalização
+  createdAt       DateTime       @default(now())
+  checkIns        HabitCheckIn[]
 }
 
 model HabitCheckIn {
