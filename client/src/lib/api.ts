@@ -7,7 +7,7 @@ import { tokenStore } from './tokenStore'
 // In dev on native (Android emulator), point to 10.0.2.2.
 // For web/dev-server, Vite proxy handles '/api'.
 const BASE_API_DEV = 'http://10.0.2.2:5000/api'
-const BASE_API_PROD = 'https://forge.flavoscompany.xyz/api'
+const BASE_API_PROD = 'https://api-forge.flavoscompany.xyz/api'
 const isProduction = import.meta.env.PROD
 const baseURL = Capacitor.isNativePlatform()
   ? (isProduction ? BASE_API_PROD : BASE_API_DEV)
