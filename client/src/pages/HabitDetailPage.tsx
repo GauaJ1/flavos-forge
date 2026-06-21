@@ -13,6 +13,13 @@ interface HabitDetail {
   id: string
   title: string
   cue?: string
+  minimumVersion?: string
+  pairWith?: string
+  goalId?: string
+  goal?: {
+    id: string
+    title: string
+  }
   freezesUsed: number
   consistency: number
   createdAt: string
@@ -41,7 +48,15 @@ export default function HabitDetailPage() {
   const [toggling, setToggling] = useState(false)
   const [freezing, setFreezing] = useState(false)
 
-  const [form, setForm] = useState({ title: '', cue: '' })
+  const [form, setForm] = useState({
+    title: '',
+    cue: '',
+    minimumVersion: '',
+    pairWith: '',
+    goalId: ''
+  })
+  const [goals, setGoals] = useState<{ id: string; title: string }[]>([])
+  const [loadingGoals, setLoadingGoals] = useState(true)
 
   const today = new Date().toISOString().split('T')[0]
   const last30 = getLastNDays(30)
@@ -52,11 +67,29 @@ export default function HabitDetailPage() {
       .then(res => {
         const h = res.data?.habit
         setHabit(h)
-        setForm({ title: h.title, cue: h.cue ?? '' })
+        setForm({
+          title: h.title,
+          cue: h.cue ?? '',
+          minimumVersion: h.minimumVersion ?? '',
+          pairWith: h.pairWith ?? '',
+          goalId: h.goalId ?? ''
+        })
       })
       .catch(() => navigate('/habits'))
       .finally(() => setLoading(false))
   }, [id, navigate])
+
+  useEffect(() => {
+    api.get('/goals')
+      .then(res => {
+        const activeGoals = (res.data?.goals ?? []).filter(
+          (g: { status: string }) => g.status === 'ACTIVE'
+        )
+        setGoals(activeGoals)
+      })
+      .catch(() => setGoals([]))
+      .finally(() => setLoadingGoals(false))
+  }, [])
 
   const isCompleted = (date: string) => {
     return habit?.checkIns.some(ci => ci.date.startsWith(date) && ci.completed) ?? false
@@ -139,8 +172,21 @@ export default function HabitDetailPage() {
       const res = await api.put(`/habits/${id}`, {
         title: form.title,
         cue: form.cue || undefined,
+        minimumVersion: form.minimumVersion || undefined,
+        pairWith: form.pairWith || undefined,
+        goalId: form.goalId || null,
       })
-      setHabit(prev => prev ? { ...prev, title: res.data.habit.title, cue: res.data.habit.cue, consistency: res.data.habit.consistency } : prev)
+      const updated = res.data.habit
+      setHabit(prev => prev ? {
+        ...prev,
+        title: updated.title,
+        cue: updated.cue,
+        minimumVersion: updated.minimumVersion,
+        pairWith: updated.pairWith,
+        goalId: updated.goalId,
+        goal: updated.goal,
+        consistency: updated.consistency
+      } : prev)
       setEditing(false)
     } catch {
       // keep open
@@ -226,6 +272,66 @@ export default function HabitDetailPage() {
               </p>
             </div>
 
+            <div>
+              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-on-surface-variant)', display: 'block', marginBottom: '8px' }}>
+                Versão mínima garantida (Autoeficácia)
+              </label>
+              <input
+                className="forge-input"
+                style={{ paddingLeft: '1rem' }}
+                value={form.minimumVersion}
+                onChange={e => setForm(p => ({ ...p, minimumVersion: e.target.value }))}
+                placeholder='Ex: "2 minutos de meditação"'
+                maxLength={200}
+              />
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-on-surface-variant)', marginTop: '6px', letterSpacing: '0.04em' }}>
+                Defina a menor versão desse hábito que ainda conta como vitória.
+              </p>
+            </div>
+
+            <div>
+              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-on-surface-variant)', display: 'block', marginBottom: '8px' }}>
+                Parear com algo? (Temptation Bundling)
+              </label>
+              <input
+                className="forge-input"
+                style={{ paddingLeft: '1rem' }}
+                value={form.pairWith}
+                onChange={e => setForm(p => ({ ...p, pairWith: e.target.value }))}
+                placeholder='Ex: "só ouço meu podcast favorito"'
+                maxLength={200}
+              />
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-on-surface-variant)', marginTop: '6px', letterSpacing: '0.04em' }}>
+                Associe o hábito a uma recompensa imediata (escolha opcional e exclusiva sua).
+              </p>
+            </div>
+
+            <div>
+              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-on-surface-variant)', display: 'block', marginBottom: '8px' }}>
+                Vincular a uma meta de longo prazo? (Progress Principle)
+              </label>
+              {loadingGoals ? (
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-on-surface-variant)' }}>Carregando metas...</p>
+              ) : goals.length === 0 ? (
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-on-surface-variant)' }}>Nenhuma meta ativa encontrada.</p>
+              ) : (
+                <select
+                  className="forge-input"
+                  style={{ paddingLeft: '1rem', cursor: 'pointer' }}
+                  value={form.goalId}
+                  onChange={e => setForm(p => ({ ...p, goalId: e.target.value }))}
+                >
+                  <option value="">— Nenhuma —</option>
+                  {goals.map(g => (
+                    <option key={g.id} value={g.id}>{g.title}</option>
+                  ))}
+                </select>
+              )}
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-on-surface-variant)', marginTop: '6px', letterSpacing: '0.04em' }}>
+                Vincule o hábito a uma meta ativa para ver o progresso compartilhado.
+              </p>
+            </div>
+
             <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
               <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setEditing(false)}>Cancelar</button>
               <button
@@ -255,6 +361,30 @@ export default function HabitDetailPage() {
                       <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-forge-teal)' }}>flash_on</span>
                       <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-on-surface-variant)', lineHeight: 1.5 }}>
                         {habit.cue}
+                      </p>
+                    </div>
+                  )}
+                  {habit.minimumVersion && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-forge-green)' }}>bolt</span>
+                      <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-on-surface-variant)', lineHeight: 1.5 }}>
+                        Tarefa mínima: <strong>{habit.minimumVersion}</strong>
+                      </p>
+                    </div>
+                  )}
+                  {habit.pairWith && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-forge-orange)' }}>link</span>
+                      <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-on-surface-variant)', lineHeight: 1.5 }}>
+                        Pareado com: <strong>{habit.pairWith}</strong>
+                      </p>
+                    </div>
+                  )}
+                  {habit.goal && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-primary)' }}>track_changes</span>
+                      <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-on-surface-variant)', lineHeight: 1.5 }}>
+                        Meta vinculada: <strong>{habit.goal.title}</strong>
                       </p>
                     </div>
                   )}

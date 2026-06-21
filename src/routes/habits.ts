@@ -159,6 +159,7 @@ router.get("/:id", requireHabitOwner, async (req: Request, res: Response) => {
         checkIns: {
           orderBy: { date: "desc" },
         },
+        goal: true,
       },
     });
 
@@ -224,6 +225,7 @@ router.put("/:id", requireHabitOwner, async (req: Request, res: Response) => {
       },
       include: {
         checkIns: true,
+        goal: true,
       },
     });
 
