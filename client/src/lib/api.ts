@@ -3,15 +3,15 @@ import { Capacitor } from '@capacitor/core'
 import { tokenStore } from './tokenStore'
 
 // Dynamic API Base URL:
-// In production on native, point to the Oracle VPS.
+// In production (both web & native), point to the Oracle VPS api-forge subdomain.
 // In dev on native (Android emulator), point to 10.0.2.2.
-// For web/dev-server, Vite proxy handles '/api'.
+// For web/dev-server in dev, Vite proxy handles '/api'.
 const BASE_API_DEV = 'http://10.0.2.2:5000/api'
 const BASE_API_PROD = 'https://api-forge.flavoscompany.xyz/api'
 const isProduction = import.meta.env.PROD
-const baseURL = Capacitor.isNativePlatform()
-  ? (isProduction ? BASE_API_PROD : BASE_API_DEV)
-  : '/api'
+const baseURL = isProduction
+  ? BASE_API_PROD
+  : (Capacitor.isNativePlatform() ? BASE_API_DEV : '/api')
 
 const api = axios.create({
   baseURL,
