@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { Capacitor } from '@capacitor/core'
 import ProtectedRoute from './components/ProtectedRoute'
+import { scheduleAllForgeReminders } from './services/notificationScheduler'
+import { useAuthStore } from './store/authStore'
 
 // Auth pages
 import LoginPage from './pages/LoginPage'
@@ -23,18 +25,21 @@ import NewJournalPage from './pages/NewJournalPage'
 import WeeklyReviewPage from './pages/WeeklyReviewPage'
 
 export default function App() {
+  const { isAuthenticated } = useAuthStore()
+
   useEffect(() => {
-    const setupNotifications = async () => {
-      if (Capacitor.isNativePlatform()) {
+    if (isAuthenticated) {
+      const setupNotifications = async () => {
+        if (!Capacitor.isNativePlatform()) return;
+
         const permStatus = await LocalNotifications.requestPermissions();
-        if (permStatus.display === 'granted') {
-          // Exemplo de notificação fixa ou local
-          // (No futuro você pode agendar com base nos hábitos do usuário)
-        }
-      }
-    };
-    setupNotifications();
-  }, []);
+        if (permStatus.display !== 'granted') return;
+
+        await scheduleAllForgeReminders();
+      };
+      setupNotifications();
+    }
+  }, [isAuthenticated]);
 
   return (
     <BrowserRouter>

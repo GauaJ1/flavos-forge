@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import TopHeader from '../components/TopHeader'
 import api from '../lib/api'
 import { useBiometricGuard } from '../lib/useBiometricGuard'
+import { getDailyPrompt } from '../utils/journalPrompt'
 
 const MOOD_OPTIONS = [
   { value: 5, emoji: '🔥', label: 'Excelente' },
@@ -12,13 +13,6 @@ const MOOD_OPTIONS = [
   { value: 1, emoji: '💔', label: 'Péssimo' },
 ]
 
-const PROMPTS = [
-  'O que travou seu foco hoje — e o que destravou?',
-  'Qual foi seu maior desafio de hoje e o que você aprendeu?',
-  'O que funcionou bem hoje? O que faria diferente?',
-  'Que pensamento dominou sua mente hoje?',
-]
-
 export default function NewJournalPage() {
   const navigate = useNavigate()
   const { isAuthenticated, authenticate, error } = useBiometricGuard()
@@ -26,7 +20,7 @@ export default function NewJournalPage() {
   const [mood, setMood] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
-  const prompt = PROMPTS[new Date().getDay() % PROMPTS.length]
+  const prompt = getDailyPrompt()
 
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length
 

@@ -55,6 +55,38 @@ export default function DashboardPage() {
   const [isUpgrading, setIsUpgrading] = useState(false)
   // Progress Principle — toast que aparece após check-in vinculado a meta
   const [goalImpactMsg, setGoalImpactMsg] = useState<string | null>(null)
+  const [activatingHabits, setActivatingHabits] = useState(false)
+
+  const handleActivateHolidayHabits = async () => {
+    setActivatingHabits(true)
+    try {
+      await api.post('/habits/bulk', [
+        {
+          title: "Projeto técnico da tarde",
+          cue: "Almoço terminar",
+          minimumVersion: "Abrir o projeto e fazer qualquer coisa por 10 minutos",
+          pairWith: null
+        },
+        {
+          title: "Leitura",
+          cue: "Sentar no quarto após o almoço",
+          minimumVersion: "2 páginas",
+          pairWith: null
+        },
+        {
+          title: "Encerramento do dia",
+          cue: "21h",
+          minimumVersion: "Registrar 1 frase no diário do Forge",
+          pairWith: null
+        }
+      ])
+      await fetchDashboard()
+    } catch (err) {
+      console.error('Failed to activate holiday habits:', err)
+    } finally {
+      setActivatingHabits(false)
+    }
+  }
 
   const { isMonday, isMonthStart } = getFreshStartContext()
 
@@ -159,6 +191,17 @@ export default function DashboardPage() {
   const circumference = 2 * Math.PI * 42
   const dashOffset = circumference * (1 - progressRatio)
   const isSunday = new Date().getDay() === 0
+
+  const afternoonHabits = data.habits.filter(h =>
+    h.title.toLowerCase().includes('leitura') ||
+    h.title.toLowerCase().includes('projeto técnico')
+  )
+
+  const afternoonStructured = afternoonHabits.length > 0 && afternoonHabits.some(h => h.completedToday)
+
+  const hasHolidayHabits = data.habits.some(h =>
+    h.title.toLowerCase().includes('projeto técnico')
+  )
 
   const toggleHabit = async (habitId: string, currentState: boolean) => {
     try {
@@ -269,6 +312,50 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {!loading && !hasHolidayHabits && (
+              <div style={{
+                gridColumn: '1 / -1',
+                padding: '16px',
+                borderRadius: '12px',
+                background: 'rgba(34, 184, 207, 0.05)',
+                border: '1px solid rgba(34, 184, 207, 0.18)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                marginBottom: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span className="material-symbols-outlined" style={{ color: 'var(--color-forge-teal)', fontSize: '22px', flexShrink: 0 }}>hotel_class</span>
+                  <div>
+                    <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '15px' }}>Plano de Prevenção e Férias</h4>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-on-surface-variant)', marginTop: '2px' }}>
+                      Ative os 3 hábitos âncora recomendados para estruturar suas tardes.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleActivateHolidayHabits}
+                  disabled={activatingHabits}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--color-forge-teal)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {activatingHabits ? 'Ativando...' : 'Ativar'}
+                </button>
               </div>
             )}
             {/* Column 1: Focus Dial, Journal, and Weekly Review */}
@@ -425,6 +512,22 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 </section>
+              )}
+
+              {/* INDICADOR DE TARDE ESTRUTURADA */}
+              {!afternoonStructured && new Date().getHours() >= 12 && (
+                <div style={{
+                  padding: '12px 16px', borderRadius: '12px',
+                  background: 'rgba(255, 182, 148, 0.05)',
+                  border: '1px solid rgba(255, 182, 148, 0.18)',
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', marginTop: '4px'
+                }}>
+                  <span className="material-symbols-outlined" style={{ color: 'var(--color-forge-orange)', fontSize: '20px', flexShrink: 0 }}>warning</span>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-forge-orange)', lineHeight: 1.5 }}>
+                    Tarde sem âncora definida — que tal iniciar o projeto técnico ou a leitura hoje?
+                  </p>
+                </div>
               )}
 
               {/* COACH IA SECTION */}

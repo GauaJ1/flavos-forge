@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { z } from "zod";
 import { requireAuth } from "../middlewares/auth.js";
 import { requireHabitOwner } from "../middlewares/requireHabitOwner.js";
 import { CreateHabitSchema, UpdateHabitSchema, HabitCheckInSchema, HabitFreezeSchema } from "../schemas/habits.js";
@@ -94,6 +95,78 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error creating habit:", error);
     res.status(500).json({ error: "internal_server_error", message: "Failed to create habit" });
+  }
+});
+
+const BulkCreateHabitsSchema = z.array(CreateHabitSchema)
+  .min(1, "At least one habit is required")
+  .max(10, "Bulk create limited to 10 habits");
+
+/**
+ * POST /api/habits/bulk
+ * Create habits in batch.
+ */
+router.post("/bulk", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    // Validate bulk payload
+    const result = BulkCreateHabitsSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(422).json({
+        error: "validation_error",
+        message: "Invalid habits list supplied",
+        details: result.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    // Verify ownership of unique goalIds if any are provided
+    const goalIds = [...new Set(result.data.map((h) => h.goalId).filter(Boolean))];
+    if (goalIds.length > 0) {
+      const userGoals = await prisma.goal.findMany({
+        where: { id: { in: goalIds as string[] }, userId },
+        select: { id: true },
+      });
+      const userGoalIds = new Set(userGoals.map(g => g.id));
+      const hasInvalidGoal = goalIds.some(id => !userGoalIds.has(id as string));
+      if (hasInvalidGoal) {
+        res.status(404).json({ 
+          error: "not_found", 
+          message: "Uma ou mais metas não foram encontradas ou não pertencem ao usuário" 
+        });
+        return;
+      }
+    }
+
+    // Create all habits in a transaction
+    const habits = await prisma.$transaction(
+      result.data.map((h) =>
+        prisma.habit.create({
+          data: {
+            userId,
+            title: h.title,
+            cue: h.cue ?? null,
+            minimumVersion: h.minimumVersion ?? null,
+            pairWith: h.pairWith ?? null,
+            goalId: h.goalId ?? null,
+            difficultyStage: 1,
+            freezesUsed: 0,
+          },
+        })
+      )
+    );
+
+    res.status(201).json({
+      message: "Habits successfully created in bulk",
+      habits: habits.map(h => ({
+        ...h,
+        consistency: 0,
+      })),
+    });
+  } catch (error) {
+    console.error("Error creating habits in bulk:", error);
+    res.status(500).json({ error: "internal_server_error", message: "Failed to create habits in bulk" });
   }
 });
 
