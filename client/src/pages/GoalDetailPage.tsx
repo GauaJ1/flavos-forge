@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import TopHeader from '../components/TopHeader'
 import api from '../lib/api'
+import { useToast } from '../hooks/useToast'
 
 interface ActionPlan {
   id?: string
@@ -84,10 +85,16 @@ export default function GoalDetailPage() {
     return DIFFICULTY_OPTIONS.find(d => d.value === difficulty)?.label ?? difficulty
   }
 
+  const { showToast, ToastEl } = useToast()
+
   const handleSave = async () => {
     if (!id || saving) return
     setSaving(true)
     try {
+      // Detectar se expectedCheckIns está sendo definido pela primeira vez
+      const hadNoExpectedCheckIns = goal?.expectedCheckIns == null
+      const willHaveExpectedCheckIns = form.expectedCheckIns !== '' && form.expectedCheckIns != null
+
       const payload: any = {
         title: form.title,
         specificOutcome: form.specificOutcome,
@@ -101,6 +108,10 @@ export default function GoalDetailPage() {
       const res = await api.put(`/goals/${id}`, payload)
       setGoal(prev => ({ ...prev!, ...res.data.goal }))
       setEditing(false)
+
+      if (hadNoExpectedCheckIns && willHaveExpectedCheckIns) {
+        showToast('Progresso recalculado com base no novo critério.', { icon: 'auto_graph', color: 'teal' })
+      }
     } catch {
       // keep editing open
     } finally {
@@ -171,6 +182,7 @@ export default function GoalDetailPage() {
 
   return (
     <div className="app-shell" style={{ background: 'var(--color-background)' }}>
+      {ToastEl}
       <TopHeader
         title={editing ? 'Editando meta' : 'Meta'}
         onBack={() => editing ? setEditing(false) : navigate('/goals')}
