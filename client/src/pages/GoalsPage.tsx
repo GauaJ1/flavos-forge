@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import TopHeader from '../components/TopHeader'
 import BottomNav from '../components/BottomNav'
 import api from '../lib/api'
+import { calculateGoalProgress, getDeadlineContext } from '../utils/goalProgress'
 
 interface ActionPlan {
   triggerCue: string
@@ -17,6 +18,7 @@ interface Goal {
   difficulty: string
   status: string
   deadline?: string
+  expectedCheckIns?: number
   actionPlans: ActionPlan[]
   checkIns: { id: string; note?: string; createdAt: string }[]
 }
@@ -46,17 +48,6 @@ export default function GoalsPage() {
   const getDifficultyLabel = (difficulty: string) => {
     const map: Record<string, string> = { easy: 'Fácil', medium: 'Moderada', hard: 'Difícil', extreme: 'Extrema' }
     return map[difficulty] ?? difficulty
-  }
-
-  // Simple progress calculation: checkIns / expected (rough estimation)
-  const getProgress = (goal: Goal) => {
-    if (!goal.deadline || goal.checkIns.length === 0) return goal.checkIns.length > 0 ? Math.min(100, goal.checkIns.length * 10) : 0
-    const created = new Date(goal.checkIns[goal.checkIns.length - 1]?.createdAt ?? Date.now())
-    const deadline = new Date(goal.deadline)
-    const now = new Date()
-    const totalDays = Math.max(1, (deadline.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
-    const elapsed = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
-    return Math.min(100, Math.round((elapsed / totalDays) * 100))
   }
 
   return (
@@ -115,7 +106,11 @@ export default function GoalsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {goals.map((goal, i) => {
-              const progress = getProgress(goal)
+              const progress = calculateGoalProgress({
+                hasDeadline: !!goal.deadline,
+                checkIns: goal.checkIns,
+                expectedCheckIns: goal.expectedCheckIns,
+              })
               const diffColor = getDifficultyColor(goal.difficulty)
               const firstPlan = goal.actionPlans?.[0]
 
@@ -172,14 +167,27 @@ export default function GoalsPage() {
                   )}
 
                   {/* Deadline */}
-                  {goal.deadline && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '10px' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-on-surface-variant)' }}>calendar_today</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-on-surface-variant)' }}>
-                        {new Date(goal.deadline).toLocaleDateString('pt-BR')}
-                      </span>
-                    </div>
-                  )}
+                  {goal.deadline && (() => {
+                    const { daysRemaining, isOverdue } = getDeadlineContext(goal.deadline)
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginTop: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-on-surface-variant)' }}>calendar_today</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-on-surface-variant)' }}>
+                            {new Date(goal.deadline).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                        <span style={{
+                          fontFamily: 'var(--font-mono)', fontSize: '10px',
+                          color: isOverdue ? 'var(--color-error)' : 'var(--color-forge-teal)',
+                          background: isOverdue ? 'rgba(255, 107, 107, 0.1)' : 'rgba(34, 184, 207, 0.1)',
+                          padding: '2px 6px', borderRadius: '4px',
+                        }}>
+                          {isOverdue ? 'Atrasada' : `Faltam ${daysRemaining} dias`}
+                        </span>
+                      </div>
+                    )
+                  })()}
                 </div>
               )
             })}

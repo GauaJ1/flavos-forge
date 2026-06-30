@@ -18,6 +18,7 @@ const schema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard', 'extreme']),
   deadline: z.string().optional(),
   actionPlans: z.array(actionPlanSchema).min(1, 'Adicione ao menos um plano Se-Então'),
+  expectedCheckIns: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -74,6 +75,7 @@ export default function NewGoalPage() {
         difficulty: data.difficulty,
         deadline: data.deadline || undefined,
         actionPlans: actionPlans.filter(ap => ap.triggerCue && ap.action),
+        expectedCheckIns: data.expectedCheckIns ? Number(data.expectedCheckIns) : undefined,
       })
       navigate('/goals')
     } catch (err: unknown) {
@@ -225,6 +227,13 @@ export default function NewGoalPage() {
             <label htmlFor="deadline" style={labelStyle}>Data limite (opcional)</label>
             <input id="deadline" type="date" className="forge-input"
               style={{ paddingLeft: '16px', colorScheme: 'dark' }} {...register('deadline')} />
+          </div>
+
+          {/* Expected Check-ins */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label htmlFor="expectedCheckIns" style={labelStyle}>Check-ins esperados até o prazo (opcional)</label>
+            <input id="expectedCheckIns" type="number" min={1} className="forge-input"
+              style={{ paddingLeft: '16px' }} placeholder="Ex: 20" {...register('expectedCheckIns')} />
           </div>
 
           {apiError && (

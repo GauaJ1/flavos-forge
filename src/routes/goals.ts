@@ -29,7 +29,7 @@ router.post("/", async (req: Request, res: Response) => {
       return;
     }
 
-    const { title, specificOutcome, metric, difficulty, deadline, actionPlans } = result.data;
+    const { title, specificOutcome, metric, difficulty, deadline, actionPlans, expectedCheckIns } = result.data;
 
     // Create Goal and associated Action Plans in a transaction
     const goal = await prisma.$transaction(async (tx) => {
@@ -42,6 +42,7 @@ router.post("/", async (req: Request, res: Response) => {
           difficulty,
           deadline,
           status: "ACTIVE",
+          expectedCheckIns,
         },
       });
 
@@ -152,7 +153,7 @@ router.put("/:id", requireGoalOwner, async (req: Request, res: Response) => {
       return;
     }
 
-    const { title, specificOutcome, metric, difficulty, deadline, status, actionPlans } = result.data;
+    const { title, specificOutcome, metric, difficulty, deadline, status, actionPlans, expectedCheckIns } = result.data;
 
     const updatedGoal = await prisma.$transaction(async (tx) => {
       // 1. Update the Goal metadata
@@ -165,6 +166,7 @@ router.put("/:id", requireGoalOwner, async (req: Request, res: Response) => {
           difficulty,
           deadline,
           status,
+          expectedCheckIns,
         },
       });
 

@@ -46,6 +46,7 @@ model Goal {
   difficulty      String        @default("MODERATE")
   deadline        DateTime?
   status          String        @default("ACTIVE")
+  expectedCheckIns Int?
   actionPlans     ActionPlan[]
   checkIns        GoalCheckIn[]
   habits          Habit[]       // hábitos vinculados a esta meta (Progress Principle)

@@ -17,6 +17,7 @@ interface GoalDetail {
   difficulty: string
   status: string
   deadline?: string
+  expectedCheckIns?: number
   actionPlans: ActionPlan[]
   checkIns: { id: string; note?: string; createdAt: string }[]
 }
@@ -51,6 +52,7 @@ export default function GoalDetailPage() {
     deadline: '',
     status: 'ACTIVE',
     actionPlans: [{ triggerCue: '', action: '' }] as ActionPlan[],
+    expectedCheckIns: '' as string | number,
   })
 
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function GoalDetailPage() {
           deadline: g.deadline ? g.deadline.split('T')[0] : '',
           status: g.status,
           actionPlans: g.actionPlans.length > 0 ? g.actionPlans : [{ triggerCue: '', action: '' }],
+          expectedCheckIns: g.expectedCheckIns ?? '',
         })
       })
       .catch(() => navigate('/goals'))
@@ -93,6 +96,7 @@ export default function GoalDetailPage() {
         status: form.status,
         deadline: form.deadline ? new Date(form.deadline).toISOString() : undefined,
         actionPlans: form.actionPlans.filter(ap => ap.triggerCue.trim() && ap.action.trim()),
+        expectedCheckIns: form.expectedCheckIns ? Number(form.expectedCheckIns) : null,
       }
       const res = await api.put(`/goals/${id}`, payload)
       setGoal(prev => ({ ...prev!, ...res.data.goal }))
@@ -245,6 +249,21 @@ export default function GoalDetailPage() {
                 type="date"
                 value={form.deadline}
                 onChange={e => setForm(p => ({ ...p, deadline: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-on-surface-variant)', display: 'block', marginBottom: '8px' }}>
+                Check-ins esperados até o prazo (opcional)
+              </label>
+              <input
+                className="forge-input"
+                style={{ paddingLeft: '1rem' }}
+                type="number"
+                min={1}
+                value={form.expectedCheckIns}
+                onChange={e => setForm(p => ({ ...p, expectedCheckIns: e.target.value }))}
+                placeholder="Ex: 20"
               />
             </div>
 

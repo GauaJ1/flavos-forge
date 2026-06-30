@@ -52,7 +52,8 @@ export const CreateGoalSchema = z.object({
     }),
   
   actionPlans: z.array(ActionPlanSchema)
-    .min(1, "At least one Action Plan (if-then cue) is required for behavioral commitment")
+    .min(1, "At least one Action Plan (if-then cue) is required for behavioral commitment"),
+  expectedCheckIns: z.number().int().positive().optional().nullable()
 });
 
 export const UpdateGoalSchema = z.object({
@@ -73,7 +74,8 @@ export const UpdateGoalSchema = z.object({
       return isNaN(d.getTime()) ? null : d;
     }),
   status: GoalStatusEnum.optional(),
-  actionPlans: z.array(ActionPlanSchema).optional()
+  actionPlans: z.array(ActionPlanSchema).optional(),
+  expectedCheckIns: z.number().int().positive().optional().nullable()
 });
 
 export const GoalCheckInSchema = z.object({
