@@ -11,6 +11,7 @@ declare global {
         id: string;
         email: string;
         plan: string;
+        timezone: string;
       };
       sessionId?: string;
     }
@@ -112,6 +113,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       id: user.id,
       email: user.email,
       plan: user.plan,
+      timezone: user.timezone,
     };
     req.sessionId = session.id;
 

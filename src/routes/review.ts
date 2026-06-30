@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { requireAuth } from "../middlewares/auth.js";
 import { prisma } from "../services/db.js";
 import { decryptJournal } from "../services/encryption.js";
+import { getCurrentWeekRange } from "../utils/dateUtils.js";
 
 const router = Router();
 
@@ -10,21 +11,18 @@ router.use(requireAuth);
 
 /**
  * GET /api/weekly-review
- * Synthesizes the user's progress for the last 7 days:
- * - Completed/failed habits consistency
- * - Goal check-ins count and action plans
- * - Mood stats and list of journal logs (decrypted)
+ * Synthesizes the user's progress for the current calendar week (Monday–Sunday)
+ * using the user's stored timezone, so the window never flips at UTC midnight.
  */
 router.get("/weekly-review", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    
-    // Set time boundary for the last 7 days
-    const now = new Date();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(now.getDate() - 7);
+    const timezone = req.user!.timezone;
 
-    // 1. Fetch active goals, their action plans, and check-ins in the last 7 days
+    // Set time boundary to the current Mon–Sun calendar week in the user's timezone
+    const { start: weekStart, end: weekEnd } = getCurrentWeekRange(timezone);
+
+    // 1. Fetch active goals, their action plans, and check-ins within this calendar week
     const goals = await prisma.goal.findMany({
       where: {
         userId,
@@ -35,7 +33,8 @@ router.get("/weekly-review", async (req: Request, res: Response) => {
         checkIns: {
           where: {
             createdAt: {
-              gte: sevenDaysAgo,
+              gte: weekStart,
+              lte: weekEnd,
             },
           },
           orderBy: { createdAt: "desc" },
@@ -43,14 +42,15 @@ router.get("/weekly-review", async (req: Request, res: Response) => {
       },
     });
 
-    // 2. Fetch habits and check-ins in the last 7 days
+    // 2. Fetch habits and check-ins within this calendar week
     const habits = await prisma.habit.findMany({
       where: { userId },
       include: {
         checkIns: {
           where: {
             date: {
-              gte: sevenDaysAgo,
+              gte: weekStart,
+              lte: weekEnd,
             },
           },
           orderBy: { date: "asc" },
@@ -58,12 +58,13 @@ router.get("/weekly-review", async (req: Request, res: Response) => {
       },
     });
 
-    // 3. Fetch journal entries in the last 7 days (excluding soft-deleted ones)
+    // 3. Fetch journal entries within this calendar week (excluding soft-deleted ones)
     const journalEntries = await prisma.journalEntry.findMany({
       where: {
         userId,
         createdAt: {
-          gte: sevenDaysAgo,
+          gte: weekStart,
+          lte: weekEnd,
         },
         deletedAt: null,
       },
@@ -122,8 +123,8 @@ router.get("/weekly-review", async (req: Request, res: Response) => {
 
     res.status(200).json({
       reviewWindow: {
-        start: sevenDaysAgo.toISOString(),
-        end: now.toISOString(),
+        start: weekStart.toISOString(),
+        end: weekEnd.toISOString(),
       },
       goals: goals.map((g) => ({
         id: g.id,

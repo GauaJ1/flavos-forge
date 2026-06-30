@@ -67,20 +67,9 @@ export const useAuthStore = create<AuthState>()(
           const { data } = await api.get('/auth/me')
           set({ user: data.user, isAuthenticated: true })
         } catch {
-          // If no active session, attempt to auto-login to the "agente" account
-          try {
-            const { data } = await api.post('/auth/login', { email: 'agente@flavoscompany.xyz', password: 'agente123' })
-            set({ user: data.user, isAuthenticated: true })
-          } catch {
-            // If the "agente" account doesn't exist, automatically register it first
-            try {
-              const { data } = await api.post('/auth/register', { name: 'agente', email: 'agente@flavoscompany.xyz', password: 'agente123' })
-              set({ user: data.user, isAuthenticated: true })
-            } catch {
-              tokenStore.clear()
-              set({ user: null, isAuthenticated: false })
-            }
-          }
+          // Session is invalid or expired — clear auth state and let ProtectedRoute redirect to login
+          tokenStore.clear()
+          set({ user: null, isAuthenticated: false })
         }
       },
     }),

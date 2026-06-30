@@ -95,7 +95,6 @@ router.get("/", async (req: Request, res: Response) => {
         actionPlans: true,
         checkIns: {
           orderBy: { createdAt: "desc" },
-          take: 10, // Limit to recent check-ins for performance
         },
       },
       orderBy: { createdAt: "desc" },

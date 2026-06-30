@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core'
 import ProtectedRoute from './components/ProtectedRoute'
 import { scheduleAllForgeReminders } from './services/notificationScheduler'
 import { useAuthStore } from './store/authStore'
+import api from './lib/api'
 
 // Auth pages
 import LoginPage from './pages/LoginPage'
@@ -28,17 +29,30 @@ export default function App() {
   const { isAuthenticated } = useAuthStore()
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const setupNotifications = async () => {
-        if (!Capacitor.isNativePlatform()) return;
+    if (!isAuthenticated) return;
 
-        const permStatus = await LocalNotifications.requestPermissions();
-        if (permStatus.display !== 'granted') return;
+    // 1. Sync the user's real timezone with the backend (silent, zero-config).
+    //    Uses the browser/device's IANA timezone from Intl, which is always correct.
+    const syncTimezone = async () => {
+      try {
+        const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (detectedTimezone) {
+          await api.put('/auth/me/timezone', { timezone: detectedTimezone });
+        }
+      } catch {
+        // Non-critical — silently ignore if it fails
+      }
+    };
+    syncTimezone();
 
-        await scheduleAllForgeReminders();
-      };
-      setupNotifications();
-    }
+    // 2. Schedule local notifications on native platforms
+    const setupNotifications = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+      const permStatus = await LocalNotifications.requestPermissions();
+      if (permStatus.display !== 'granted') return;
+      await scheduleAllForgeReminders();
+    };
+    setupNotifications();
   }, [isAuthenticated]);
 
   return (

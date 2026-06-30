@@ -6,6 +6,8 @@ import { CreateHabitSchema, UpdateHabitSchema, HabitCheckInSchema, HabitFreezeSc
 import { prisma } from "../services/db.js";
 import { writeLimiter } from "../middlewares/rateLimiter.js";
 import { decideHabitPrompt } from "../services/notificationLogic.js";
+import { getTodayInTimezone } from "../utils/dateUtils.js";
+import { toZonedTime, format } from "date-fns-tz";
 
 const router = Router();
 
@@ -16,18 +18,29 @@ router.use(requireAuth);
  * Helper function to calculate consistency for a habit in a rolling 30-day window.
  * Formula: Completed check-ins / (Days active in 30-day window - Freezes used)
  */
-function calculateConsistency(createdAt: Date, checkIns: { date: Date; completed: boolean; isFrozen?: boolean }[], freezesUsed: number): number {
-  const now = new Date();
-  const thirtyDaysAgo = new Date();
+function calculateConsistency(
+  createdAt: Date,
+  checkIns: { date: Date; completed: boolean; isFrozen?: boolean }[],
+  freezesUsed: number,
+  timezone: string
+): number {
+  const todayStr = getTodayInTimezone(timezone);
+  const now = toZonedTime(new Date(), timezone);
+  
+  // Calculate thirtyDaysAgo in the user's timezone
+  const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
+  const thirtyDaysAgoStr = format(thirtyDaysAgo, 'yyyy-MM-dd', { timeZone: timezone });
 
   // 1. Count completed check-ins in the last 30 days (excluding frozen ones)
-  const completedCount = checkIns.filter(
-    (ci) => new Date(ci.date) >= thirtyDaysAgo && ci.completed && !ci.isFrozen
-  ).length;
+  const completedCount = checkIns.filter((ci) => {
+    const ciDateStr = ci.date.toISOString().split("T")[0];
+    return ciDateStr >= thirtyDaysAgoStr && ciDateStr <= todayStr && ci.completed && !ci.isFrozen;
+  }).length;
 
   // 2. Calculate actual active days in the last 30 days
-  const diffTime = Math.abs(now.getTime() - createdAt.getTime());
+  const createdAtZoned = toZonedTime(createdAt, timezone);
+  const diffTime = Math.abs(now.getTime() - createdAtZoned.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const activeDaysInWindow = Math.min(30, Math.max(1, diffDays));
 
@@ -189,9 +202,10 @@ router.get("/", async (req: Request, res: Response) => {
     });
 
     // Map habits and calculate consistency for each
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const timezone = req.user!.timezone;
+    const today = getTodayInTimezone(timezone);
     const habitsWithConsistency = habits.map((habit) => {
-      const consistency = calculateConsistency(habit.createdAt, habit.checkIns, habit.freezesUsed);
+      const consistency = calculateConsistency(habit.createdAt, habit.checkIns, habit.freezesUsed, timezone);
       const completedToday = habit.checkIns.some(
         (ci) => ci.date.toISOString().startsWith(today) && ci.completed
       );
@@ -241,7 +255,7 @@ router.get("/:id", requireHabitOwner, async (req: Request, res: Response) => {
       return;
     }
 
-    const consistency = calculateConsistency(habit.createdAt, habit.checkIns, habit.freezesUsed);
+    const consistency = calculateConsistency(habit.createdAt, habit.checkIns, habit.freezesUsed, req.user!.timezone);
 
     res.status(200).json({
       habit: {
@@ -302,7 +316,7 @@ router.put("/:id", requireHabitOwner, async (req: Request, res: Response) => {
       },
     });
 
-    const consistency = calculateConsistency(updatedHabit.createdAt, updatedHabit.checkIns, updatedHabit.freezesUsed);
+    const consistency = calculateConsistency(updatedHabit.createdAt, updatedHabit.checkIns, updatedHabit.freezesUsed, req.user!.timezone);
 
     res.status(200).json({
       message: "Habit successfully updated",
@@ -420,7 +434,7 @@ router.post("/:id/checkin", writeLimiter, requireHabitOwner, async (req: Request
       include: { checkIns: true, goal: true },
     });
 
-    const consistency = calculateConsistency(habit!.createdAt, habit!.checkIns, habit!.freezesUsed);
+    const consistency = calculateConsistency(habit!.createdAt, habit!.checkIns, habit!.freezesUsed, req.user!.timezone);
 
     // Progress Principle — retorna impacto na meta vinculada quando existir
     let goalImpact: { goalTitle: string; relatedProgressSignal: number } | null = null;
@@ -542,7 +556,7 @@ router.post("/:id/freeze", writeLimiter, requireHabitOwner, async (req: Request,
       include: { checkIns: true },
     });
 
-    const consistency = calculateConsistency(habit!.createdAt, habit!.checkIns, habit!.freezesUsed);
+    const consistency = calculateConsistency(habit!.createdAt, habit!.checkIns, habit!.freezesUsed, req.user!.timezone);
 
     res.status(211).json({
       message: "Habit paused/frozen successfully for this date",

@@ -443,7 +443,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, name: true, plan: true },
+      select: { id: true, email: true, name: true, plan: true, timezone: true },
     });
 
     if (!user) {
@@ -455,6 +455,41 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
   } catch (error) {
     console.error("GET /me error:", error);
     res.status(500).json({ error: "internal_server_error", message: "Failed to fetch user." });
+  }
+});
+
+/**
+ * PUT /api/auth/me/timezone
+ * Update the authenticated user's stored timezone.
+ * Called by the frontend after login using Intl.DateTimeFormat().resolvedOptions().timeZone.
+ */
+router.put("/me/timezone", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { timezone } = req.body;
+
+    if (typeof timezone !== "string" || !timezone || timezone.length > 60) {
+      res.status(422).json({ error: "validation_error", message: "Fuso horário inválido." });
+      return;
+    }
+
+    // Validate that the timezone string is a real IANA timezone
+    try {
+      Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    } catch {
+      res.status(422).json({ error: "validation_error", message: "Fuso horário inválido." });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { timezone },
+    });
+
+    res.status(200).json({ message: "Fuso horário atualizado com sucesso.", timezone });
+  } catch (error) {
+    console.error("PUT /me/timezone error:", error);
+    res.status(500).json({ error: "internal_server_error", message: "Falha ao atualizar fuso horário." });
   }
 });
 
